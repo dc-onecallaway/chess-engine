@@ -13,4 +13,5 @@ add_executable(
     src/Move.cpp
     src/Piece.cpp
     src/Engine.cpp
+    src/Bitboard.cpp
 )
