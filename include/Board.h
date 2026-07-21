@@ -25,6 +25,11 @@ private:
 public:
     void initialize();
     void print();
+    uint64_t getWhiteOccupancy() const;
+    uint64_t getBlackOccupancy() const;
+    uint64_t getOccupied() const;
+    bool isWhiteToMove() const;
+    uint64_t getPieceBitboard(Piece piece) const;
 };
 
 #endif

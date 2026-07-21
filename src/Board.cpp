@@ -73,3 +73,36 @@ void Board::print()
         std::cout << std::endl;
     }
 }
+
+uint64_t Board::getWhiteOccupancy() const
+{
+    uint64_t board = 0ULL;
+    for (int i = 0; i < 6; i++)
+    {
+        board |= pieces[i];
+    }
+    return board;
+}
+uint64_t Board::getBlackOccupancy() const
+{
+    uint64_t board = 0ULL;
+    for (int i = 6; i < 12; i++)
+    {
+        board |= pieces[i];
+    }
+    return board;
+}
+uint64_t Board::getOccupied() const
+{
+    return (getBlackOccupancy() | getWhiteOccupancy());
+}
+
+bool Board::isWhiteToMove() const
+{
+    return whiteToMove;
+}
+
+uint64_t Board::getPieceBitboard(Piece piece) const
+{
+    return pieces[static_cast<int>(piece)];
+}

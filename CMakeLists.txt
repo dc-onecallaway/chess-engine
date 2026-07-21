@@ -15,4 +15,5 @@ add_executable(
     src/Engine.cpp
     src/Bitboard.cpp
     src/AttackTables.cpp
+    src/MoveGenerator.cpp
 )
