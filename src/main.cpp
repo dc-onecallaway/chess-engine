@@ -11,9 +11,11 @@ int main()
     MoveGenerator generator;
     b1.initialize();
     b1.print();
-    AttackTables::print(28);
     std::vector<Move> moves;
-    generator.generateKnightMoves(b1, moves);
+    // AttackTables::print(AttackTables::kingAttacks[0]);
+    generator.generateKingMoves(b1, moves);
+    std::cout << moves.size() << '\n';
+    // generator.generateKnightMoves(b1, moves);
 
     for (Move temp : moves)
     {

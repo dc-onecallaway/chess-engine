@@ -6,9 +6,10 @@
 namespace AttackTables
 {
     extern uint64_t knightAttacks[64];
+    extern uint64_t kingAttacks[64];
 
     void initialize();
-    void print(int square);
+    void print(uint64_t bitboard);
 }
 
 #endif
