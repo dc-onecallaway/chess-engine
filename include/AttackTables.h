@@ -12,6 +12,8 @@ namespace AttackTables
 
     void initialize();
     void print(uint64_t bitboard);
+    uint64_t getBishopAttacks(int square, uint64_t occupied);
+    uint64_t getRookAttacks(int square, uint64_t occupied);
+    uint64_t getQueenAttacks(int square, uint64_t occupied);
 }
-
 #endif

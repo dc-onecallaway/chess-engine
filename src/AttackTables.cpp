@@ -118,6 +118,65 @@ namespace AttackTables
         initializeBlackPawnAttacks();
     }
 
+    uint64_t getBishopAttacks(int square, uint64_t occupied)
+    {
+        uint64_t attacks = 0ULL;
+        int rank = square / 8;
+        int file = square % 8;
+        const int rankOffSets[] = {-1, -1, 1, 1};
+        const int fileOffSets[] = {1, -1, 1, -1};
+        for (int i = 0; i < 4; i++)
+        {
+            int newRank = rank + rankOffSets[i];
+            int newFile = file + fileOffSets[i];
+            while (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8)
+            {
+                int newSquare = newRank * 8 + newFile;
+                attacks |= (1ULL << newSquare);
+                if (occupied & (1ULL << newSquare))
+                {
+                    break;
+                }
+                newRank += rankOffSets[i];
+                newFile += fileOffSets[i];
+            }
+        }
+
+        return attacks;
+    }
+
+    uint64_t getRookAttacks(int square, uint64_t occupied)
+    {
+        uint64_t attacks = 0ULL;
+        int rank = square / 8;
+        int file = square % 8;
+        const int rankOffSets[] = {0, 0, 1, -1};
+        const int fileOffSets[] = {1, -1, 0, 0};
+        for (int i = 0; i < 4; i++)
+        {
+            int newRank = rank + rankOffSets[i];
+            int newFile = file + fileOffSets[i];
+            while (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8)
+            {
+                int newSquare = newRank * 8 + newFile;
+                attacks |= (1ULL << newSquare);
+                if (occupied & (1ULL << newSquare))
+                {
+                    break;
+                }
+                newRank += rankOffSets[i];
+                newFile += fileOffSets[i];
+            }
+        }
+
+        return attacks;
+    }
+
+    uint64_t getQueenAttacks(int square, uint64_t occupied)
+    {
+        return (getBishopAttacks(square, occupied) | getRookAttacks(square, occupied));
+    }
+
     void print(uint64_t bitboard)
     {
         for (int i = 0; i < 8; i++)

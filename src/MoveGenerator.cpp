@@ -165,3 +165,104 @@ void MoveGenerator::generatePawnMoves(const Board &board, std::vector<Move> &mov
         pawn &= (pawn - 1);
     }
 }
+
+void MoveGenerator::generateBishopMoves(const Board &board, std::vector<Move> &moves)
+{
+    bool whiteToMove = board.isWhiteToMove();
+    Piece bishop = whiteToMove ? Piece::WhiteBishop : Piece::BlackBishop;
+
+    uint64_t ownOccupied = whiteToMove ? board.getWhiteOccupancy() : board.getBlackOccupancy();
+    uint64_t enemyOccupied = whiteToMove ? board.getBlackOccupancy() : board.getWhiteOccupancy();
+    uint64_t occupied = board.getOccupied();
+    uint64_t bishops = board.getPieceBitboard(bishop);
+
+    while (bishops)
+    {
+        int square = __builtin_ctzll(bishops);
+        uint64_t attacks = AttackTables::getBishopAttacks(square, occupied);
+        attacks &= ~ownOccupied;
+
+        while (attacks)
+        {
+            int attackSquare = __builtin_ctzll(attacks);
+            if (enemyOccupied & (1ULL << attackSquare))
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Capture);
+            }
+            else
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Quiet);
+            }
+            attacks &= (attacks - 1);
+        }
+
+        bishops &= (bishops - 1);
+    }
+}
+
+void MoveGenerator::generateRookMoves(const Board &board, std::vector<Move> &moves)
+{
+    bool whiteToMove = board.isWhiteToMove();
+    Piece rook = whiteToMove ? Piece::WhiteRook : Piece::BlackRook;
+
+    uint64_t ownOccupied = whiteToMove ? board.getWhiteOccupancy() : board.getBlackOccupancy();
+    uint64_t enemyOccupied = whiteToMove ? board.getBlackOccupancy() : board.getWhiteOccupancy();
+    uint64_t occupied = board.getOccupied();
+    uint64_t rooks = board.getPieceBitboard(rook);
+
+    while (rooks)
+    {
+        int square = __builtin_ctzll(rooks);
+        uint64_t attacks = AttackTables::getRookAttacks(square, occupied);
+        attacks &= ~ownOccupied;
+
+        while (attacks)
+        {
+            int attackSquare = __builtin_ctzll(attacks);
+            if (enemyOccupied & (1ULL << attackSquare))
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Capture);
+            }
+            else
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Quiet);
+            }
+            attacks &= (attacks - 1);
+        }
+
+        rooks &= (rooks - 1);
+    }
+}
+
+void MoveGenerator::generateQueenMoves(const Board &board, std::vector<Move> &moves)
+{
+    bool whiteToMove = board.isWhiteToMove();
+    Piece queen = whiteToMove ? Piece::WhiteQueen : Piece::BlackQueen;
+
+    uint64_t ownOccupied = whiteToMove ? board.getWhiteOccupancy() : board.getBlackOccupancy();
+    uint64_t enemyOccupied = whiteToMove ? board.getBlackOccupancy() : board.getWhiteOccupancy();
+    uint64_t occupied = board.getOccupied();
+    uint64_t queens = board.getPieceBitboard(queen);
+
+    while (queens)
+    {
+        int square = __builtin_ctzll(queens);
+        uint64_t attacks = AttackTables::getQueenAttacks(square, occupied);
+        attacks &= ~ownOccupied;
+
+        while (attacks)
+        {
+            int attackSquare = __builtin_ctzll(attacks);
+            if (enemyOccupied & (1ULL << attackSquare))
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Capture);
+            }
+            else
+            {
+                moves.emplace_back(square, attackSquare, MoveType::Quiet);
+            }
+            attacks &= (attacks - 1);
+        }
+        queens &= (queens - 1);
+    }
+}
