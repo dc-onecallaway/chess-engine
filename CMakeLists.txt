@@ -14,4 +14,5 @@ add_executable(
     src/Piece.cpp
     src/Engine.cpp
     src/Bitboard.cpp
+    src/AttackTables.cpp
 )
