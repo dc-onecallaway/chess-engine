@@ -21,5 +21,10 @@ int main()
     {
         std::cout << (int)(temp.getFrom()) << " - " << (int)(temp.getTo()) << std::endl;
     }
+
+    AttackTables::print(AttackTables::whitePawnAttacks[28]);
+    std::cout << '\n';
+    AttackTables::print(AttackTables::blackPawnAttacks[28]);
+
     return 0;
 }

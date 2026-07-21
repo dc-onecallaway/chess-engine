@@ -11,6 +11,7 @@ private:
 public:
     void generateKnightMoves(const Board &board, std::vector<Move> &moves); // Pass by reference and no changes to board
     void generateKingMoves(const Board &board, std::vector<Move> &moves);
+    void generatePawnMoves(const Board &board, std::vector<Move> &moves);
 };
 
 #endif

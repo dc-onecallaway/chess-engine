@@ -5,6 +5,8 @@ namespace AttackTables
 {
     uint64_t knightAttacks[64];
     uint64_t kingAttacks[64];
+    uint64_t whitePawnAttacks[64];
+    uint64_t blackPawnAttacks[64];
 
     void initializeKnightAttacks()
     {
@@ -60,11 +62,60 @@ namespace AttackTables
         }
     }
 
+    void initializeWhitePawnAttacks()
+    {
+        for (int square = 0; square < 64; square++)
+        {
+            whitePawnAttacks[square] = 0ULL;
+            int rank = (square / 8);
+            int file = square % 8;
+
+            int fileOffsets[] = {-1, 1};
+
+            for (int i = 0; i < 2; i++)
+            {
+                int newRank = rank + 1;
+                int newFile = file + fileOffsets[i];
+
+                if (newRank >= 0 && newFile >= 0 && newRank < 8 && newFile < 8)
+                {
+                    int newSquare = newRank * 8 + newFile;
+                    whitePawnAttacks[square] |= (1ULL << newSquare);
+                }
+            }
+        }
+    }
+
+    void initializeBlackPawnAttacks()
+    {
+        for (int square = 0; square < 64; square++)
+        {
+            blackPawnAttacks[square] = 0ULL;
+            int rank = (square / 8);
+            int file = square % 8;
+
+            int fileOffsets[] = {-1, 1};
+
+            for (int i = 0; i < 2; i++)
+            {
+                int newRank = rank - 1;
+                int newFile = file + fileOffsets[i];
+
+                if (newRank >= 0 && newFile >= 0 && newRank < 8 && newFile < 8)
+                {
+                    int newSquare = newRank * 8 + newFile;
+                    blackPawnAttacks[square] |= (1ULL << newSquare);
+                }
+            }
+        }
+    }
+
     void initialize()
     {
         initializeKnightAttacks();
         initializeKingAttacks();
-        // initializePawnAttacks();
+        initializeWhitePawnAttacks();
+        initializeBlackPawnAttacks();
     }
 
     void print(uint64_t bitboard)
