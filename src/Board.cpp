@@ -436,3 +436,8 @@ void Board::makeMove(const Move &move)
     // 10. Switch side
     whiteToMove = !whiteToMove;
 }
+
+int Board::getKingSquare(bool white) const
+{
+    return __builtin_ctzll(pieces[static_cast<int>(white ? Piece::WhiteKing : Piece::BlackKing)]);
+}

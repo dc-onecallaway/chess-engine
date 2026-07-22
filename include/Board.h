@@ -50,6 +50,7 @@ public:
     void addPiece(Piece piece, int square);
     Piece getPieceOnSquare(int square) const;
     void makeMove(const Move &move);
+    int getKingSquare(bool white) const;
 };
 
 #endif

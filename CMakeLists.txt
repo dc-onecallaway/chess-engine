@@ -16,4 +16,5 @@ add_executable(
     src/Bitboard.cpp
     src/AttackTables.cpp
     src/MoveGenerator.cpp
+    src/Perft.cpp
 )

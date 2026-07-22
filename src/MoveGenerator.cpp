@@ -341,3 +341,35 @@ void MoveGenerator::generateQueenMoves(const Board &board, std::vector<Move> &mo
         queens &= (queens - 1);
     }
 }
+
+std::vector<Move> MoveGenerator::generateLegalMoves(const Board &board)
+{
+    std::vector<Move> pseudoMoves;
+
+    generatePawnMoves(board, pseudoMoves);
+    generateKnightMoves(board, pseudoMoves);
+    generateBishopMoves(board, pseudoMoves);
+    generateRookMoves(board, pseudoMoves);
+    generateQueenMoves(board, pseudoMoves);
+    generateKingMoves(board, pseudoMoves);
+
+    std::vector<Move> legalMoves;
+
+    // Check every pseudo move
+    for (const Move &move : pseudoMoves)
+    {
+        Board tempBoard = board;  // Copy current position
+        tempBoard.makeMove(move); // Play the move
+
+        // Find our king
+        int king = tempBoard.getKingSquare(!tempBoard.isWhiteToMove());
+        // Check if our king is attacked
+        // If not attacked -> legalMoves.push_back(move);
+        if (!tempBoard.isSquareAttacked(king, tempBoard.isWhiteToMove()))
+        {
+            legalMoves.push_back(move);
+        }
+    }
+
+    return legalMoves;
+}

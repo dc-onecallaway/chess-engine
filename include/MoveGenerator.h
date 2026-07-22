@@ -15,6 +15,7 @@ public:
     void generateBishopMoves(const Board &board, std::vector<Move> &moves);
     void generateRookMoves(const Board &board, std::vector<Move> &moves);
     void generateQueenMoves(const Board &board, std::vector<Move> &moves);
+    std::vector<Move> generateLegalMoves(const Board &board);
 };
 
 #endif
