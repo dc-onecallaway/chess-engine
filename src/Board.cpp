@@ -239,3 +239,200 @@ bool Board::isBlackCastleQueenSide() const
 {
     return blackCastleQueenSide;
 }
+
+void Board::removePiece(Piece piece, int square)
+{
+    pieces[static_cast<int>(piece)] &= ~(1ULL << square);
+}
+
+void Board::addPiece(Piece piece, int square)
+{
+    pieces[static_cast<int>(piece)] |= (1ULL << square);
+}
+
+Piece Board::getPieceOnSquare(int square) const
+{
+    uint64_t board = getOccupied();
+    uint64_t mask = (1ULL << square);
+    if (!(board & mask))
+    {
+        return Piece::None;
+    }
+    if (getWhiteOccupancy() & mask)
+    {
+        if (pieces[static_cast<int>(Piece::WhitePawn)] & mask)
+        {
+            return Piece::WhitePawn;
+        }
+        else if (pieces[static_cast<int>(Piece::WhiteKnight)] & mask)
+        {
+            return Piece::WhiteKnight;
+        }
+        else if (pieces[static_cast<int>(Piece::WhiteBishop)] & mask)
+        {
+            return Piece::WhiteBishop;
+        }
+        else if (pieces[static_cast<int>(Piece::WhiteQueen)] & mask)
+        {
+            return Piece::WhiteQueen;
+        }
+        else if (pieces[static_cast<int>(Piece::WhiteRook)] & mask)
+        {
+            return Piece::WhiteRook;
+        }
+        else if (pieces[static_cast<int>(Piece::WhiteKing)] & mask)
+        {
+            return Piece::WhiteKing;
+        }
+
+        return Piece::None;
+    }
+    else
+    {
+        if (pieces[static_cast<int>(Piece::BlackPawn)] & mask)
+        {
+            return Piece::BlackPawn;
+        }
+        else if (pieces[static_cast<int>(Piece::BlackKnight)] & mask)
+        {
+            return Piece::BlackKnight;
+        }
+        else if (pieces[static_cast<int>(Piece::BlackBishop)] & mask)
+        {
+            return Piece::BlackBishop;
+        }
+        else if (pieces[static_cast<int>(Piece::BlackQueen)] & mask)
+        {
+            return Piece::BlackQueen;
+        }
+        else if (pieces[static_cast<int>(Piece::BlackRook)] & mask)
+        {
+            return Piece::BlackRook;
+        }
+        else if (pieces[static_cast<int>(Piece::BlackKing)] & mask)
+        {
+            return Piece::BlackKing;
+        }
+
+        return Piece::None;
+    }
+}
+
+void Board::makeMove(const Move &move)
+{
+    // 1. Find moving piece
+    Piece movingPiece = getPieceOnSquare(move.getFrom());
+
+    // 2. Remove moving piece
+    removePiece(movingPiece, move.getFrom());
+
+    Piece capturedPiece = getPieceOnSquare(move.getTo());
+    MoveType mType = move.getMoveType();
+
+    if (mType == MoveType::Quiet)
+    {
+
+        addPiece(movingPiece, move.getTo());
+    }
+    else if (mType == MoveType::Capture)
+    {
+        removePiece(capturedPiece, move.getTo());
+        addPiece(movingPiece, move.getTo());
+    }
+    else if (mType == MoveType::Promotion)
+    {
+        addPiece(move.getPromotionPiece(), move.getTo());
+    }
+    else if (mType == MoveType::PromotionCapture)
+    {
+        removePiece(capturedPiece, move.getTo());
+        addPiece(move.getPromotionPiece(), move.getTo());
+    }
+    else if (mType == MoveType::EnPassant)
+    {
+        int removingSquare = whiteToMove ? move.getTo() - 8 : move.getTo() + 8;
+        capturedPiece = getPieceOnSquare(removingSquare);
+        removePiece(capturedPiece, removingSquare);
+        addPiece(movingPiece, move.getTo());
+    }
+    else if (mType == MoveType::KingCastle)
+    {
+        addPiece(movingPiece, move.getTo());
+        Piece rook = getPieceOnSquare(move.getFrom() + 3);
+        removePiece(rook, move.getFrom() + 3);
+        addPiece(rook, move.getTo() - 1);
+    }
+    else if (mType == MoveType::QueenCastle)
+    {
+        addPiece(movingPiece, move.getTo());
+        Piece rook = getPieceOnSquare(move.getFrom() - 4);
+        removePiece(rook, move.getFrom() - 4);
+        addPiece(rook, move.getTo() + 1);
+    }
+
+    // 6. Update castling rights
+    if (whiteCastleKingSide)
+    {
+        if (movingPiece == Piece::WhiteKing || ((movingPiece == Piece::WhiteRook) && move.getFrom() == 7) || ((capturedPiece == Piece::WhiteRook) && move.getTo() == 7))
+        {
+            whiteCastleKingSide = false;
+        }
+    }
+    if (whiteCastleQueenSide)
+    {
+        if (movingPiece == Piece::WhiteKing || ((movingPiece == Piece::WhiteRook) && move.getFrom() == 0) || ((capturedPiece == Piece::WhiteRook) && move.getTo() == 0))
+        {
+            whiteCastleQueenSide = false;
+        }
+    }
+    if (blackCastleKingSide)
+    {
+        if (movingPiece == Piece::BlackKing || ((movingPiece == Piece::BlackRook) && move.getFrom() == 63) || ((capturedPiece == Piece::BlackRook) && move.getTo() == 63))
+        {
+            blackCastleKingSide = false;
+        }
+    }
+    if (blackCastleQueenSide)
+    {
+        if (movingPiece == Piece::BlackKing || ((movingPiece == Piece::BlackRook) && move.getFrom() == 56) || ((capturedPiece == Piece::BlackRook) && move.getTo() == 56))
+        {
+            blackCastleQueenSide = false;
+        }
+    }
+
+    // 7. Update en passant square
+    enPassantSquare = -1;
+    if (movingPiece == Piece::WhitePawn)
+    {
+        if (move.getFrom() + 16 == move.getTo())
+        {
+            enPassantSquare = move.getFrom() + 8;
+        }
+    }
+    else if (movingPiece == Piece::BlackPawn)
+    {
+        if (move.getFrom() - 16 == move.getTo())
+        {
+            enPassantSquare = move.getFrom() - 8;
+        }
+    }
+
+    // 8. Update halfmove clock
+    bool pawnMove = movingPiece == Piece::WhitePawn ||
+                    movingPiece == Piece::BlackPawn;
+
+    bool capture = mType == MoveType::Capture ||
+                   mType == MoveType::EnPassant ||
+                   mType == MoveType::PromotionCapture;
+
+    halfMoveClock = (pawnMove || capture) ? 0 : halfMoveClock + 1;
+
+    // 9. Update fullmove number
+    if (!whiteToMove)
+    {
+        fullMoveNumber++;
+    }
+
+    // 10. Switch side
+    whiteToMove = !whiteToMove;
+}

@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include "Piece.h"
+#include "Move.h"
 
 class Board
 {
@@ -44,6 +45,11 @@ public:
     void setBlackCastleQueenSide(bool value);
 
     void setEnPassantSquare(int square);
+
+    void removePiece(Piece piece, int square);
+    void addPiece(Piece piece, int square);
+    Piece getPieceOnSquare(int square) const;
+    void makeMove(const Move &move);
 };
 
 #endif

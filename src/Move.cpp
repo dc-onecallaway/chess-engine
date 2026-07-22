@@ -21,3 +21,8 @@ MoveType Move ::getMoveType() const
 {
     return moveType;
 }
+
+Piece Move::getPromotionPiece() const
+{
+    return promotionPiece;
+}
