@@ -1,4 +1,5 @@
 #include "../include/Board.h"
+#include "../include/AttackTables.h"
 #include <iostream>
 #include <map>
 
@@ -105,4 +106,136 @@ bool Board::isWhiteToMove() const
 uint64_t Board::getPieceBitboard(Piece piece) const
 {
     return pieces[static_cast<int>(piece)];
+}
+
+int Board::getEnPassantSquare() const
+{
+    return enPassantSquare;
+}
+
+bool Board::isSquareAttacked(int square, bool byWhite) const
+{
+    // 1. Get the occupancy
+    uint64_t occupied = getOccupied();
+
+    // 2. Get all attacking pieces of the specified color
+    uint64_t pawns;
+    uint64_t knights;
+    uint64_t bishops;
+    uint64_t rooks;
+    uint64_t queens;
+    uint64_t king;
+
+    if (byWhite)
+    {
+        pawns = pieces[static_cast<int>(Piece::WhitePawn)];
+        knights = pieces[static_cast<int>(Piece::WhiteKnight)];
+        bishops = pieces[static_cast<int>(Piece::WhiteBishop)];
+        rooks = pieces[static_cast<int>(Piece ::WhiteRook)];
+        queens = pieces[static_cast<int>(Piece::WhiteQueen)];
+        king = pieces[static_cast<int>(Piece::WhiteKing)];
+    }
+    else
+    {
+        pawns = pieces[static_cast<int>(Piece::BlackPawn)];
+        knights = pieces[static_cast<int>(Piece::BlackKnight)];
+        bishops = pieces[static_cast<int>(Piece::BlackBishop)];
+        rooks = pieces[static_cast<int>(Piece ::BlackRook)];
+        queens = pieces[static_cast<int>(Piece::BlackQueen)];
+        king = pieces[static_cast<int>(Piece::BlackKing)];
+    }
+
+    // 3. Pawn attacks
+    while (pawns)
+    {
+        int pawnSquare = __builtin_ctzll(pawns);
+        uint64_t attacks = byWhite ? AttackTables::whitePawnAttacks[pawnSquare] : AttackTables::blackPawnAttacks[pawnSquare];
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        pawns &= pawns - 1;
+    }
+    // 4. Knight attacks
+
+    while (knights)
+    {
+        int knightSquare = __builtin_ctzll(knights);
+        uint64_t attacks = AttackTables::knightAttacks[knightSquare];
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        knights &= knights - 1;
+    }
+
+    // 5. Bishop attacks
+
+    while (bishops)
+    {
+        int bishopSquare = __builtin_ctzll(bishops);
+        uint64_t attacks = AttackTables::getBishopAttacks(bishopSquare, occupied);
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        bishops &= bishops - 1;
+    }
+
+    // 6. Rook attacks
+
+    while (rooks)
+    {
+        int rookSquare = __builtin_ctzll(rooks);
+        uint64_t attacks = AttackTables::getRookAttacks(rookSquare, occupied);
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        rooks &= rooks - 1;
+    }
+
+    // 7. Queen attacks
+
+    while (queens)
+    {
+        int queenSquare = __builtin_ctzll(queens);
+        uint64_t attacks = AttackTables::getQueenAttacks(queenSquare, occupied);
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        queens &= queens - 1;
+    }
+
+    // 8. King attacks
+
+    while (king)
+    {
+        int kingSquare = __builtin_ctzll(king);
+        uint64_t attacks = AttackTables::kingAttacks[kingSquare];
+        if (attacks & (1ULL << square))
+        {
+            return true;
+        }
+        king &= king - 1;
+    }
+    return false;
+}
+
+bool Board::isWhiteCastleKingSide() const
+{
+    return whiteCastleKingSide;
+}
+bool Board::isWhiteCastleQueenSide() const
+{
+    return whiteCastleQueenSide;
+}
+bool Board::isBlackCastleKingSide() const
+{
+    return blackCastleKingSide;
+}
+bool Board::isBlackCastleQueenSide() const
+{
+    return blackCastleQueenSide;
 }

@@ -30,6 +30,20 @@ public:
     uint64_t getOccupied() const;
     bool isWhiteToMove() const;
     uint64_t getPieceBitboard(Piece piece) const;
+    int getEnPassantSquare() const;
+    bool isSquareAttacked(int square, bool byWhite) const;
+
+    bool isWhiteCastleKingSide() const;
+    bool isWhiteCastleQueenSide() const;
+    bool isBlackCastleKingSide() const;
+    bool isBlackCastleQueenSide() const;
+
+    void setWhiteCastleKingSide(bool value);
+    void setWhiteCastleQueenSide(bool value);
+    void setBlackCastleKingSide(bool value);
+    void setBlackCastleQueenSide(bool value);
+
+    void setEnPassantSquare(int square);
 };
 
 #endif

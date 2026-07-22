@@ -41,6 +41,7 @@ void MoveGenerator::generateKingMoves(const Board &board, std::vector<Move> &mov
 
     uint64_t ownOccupied = whiteToMove ? board.getWhiteOccupancy() : board.getBlackOccupancy();
     uint64_t enemyOccupied = whiteToMove ? board.getBlackOccupancy() : board.getWhiteOccupancy();
+    uint64_t occupied = ownOccupied | enemyOccupied;
 
     uint64_t king = board.getPieceBitboard(kingType);
 
@@ -59,6 +60,61 @@ void MoveGenerator::generateKingMoves(const Board &board, std::vector<Move> &mov
 
         moves.emplace_back(square, attackSquare, type);
         pseudoAttacks &= (pseudoAttacks - 1);
+    }
+
+    if (whiteToMove)
+    {
+        if (square == 4)
+        {
+            if (board.isWhiteCastleKingSide() &&
+                !board.isSquareAttacked(5, false) &&
+                !board.isSquareAttacked(6, false) &&
+                !board.isSquareAttacked(4, false) &&
+                !((1ULL << 5) & occupied) &&
+                !((1ULL << 6) & occupied) &&
+                ((1ULL << 7) & board.getPieceBitboard(Piece::WhiteRook)))
+            {
+                moves.emplace_back(square, 6, MoveType::KingCastle);
+            }
+            if (board.isWhiteCastleQueenSide() &&
+                !board.isSquareAttacked(3, false) &&
+                !board.isSquareAttacked(2, false) &&
+                !board.isSquareAttacked(4, false) &&
+                !((1ULL << 3) & occupied) &&
+                !((1ULL << 2) & occupied) &&
+                !((1ULL << 1) & occupied) &&
+                ((1ULL << 0) & board.getPieceBitboard(Piece::WhiteRook)))
+            {
+                moves.emplace_back(square, 2, MoveType::QueenCastle);
+            }
+        }
+    }
+    else
+    {
+        if (square == 60)
+        {
+            if (board.isBlackCastleKingSide() &&
+                !board.isSquareAttacked(61, true) &&
+                !board.isSquareAttacked(62, true) &&
+                !board.isSquareAttacked(60, true) &&
+                !((1ULL << 61) & occupied) &&
+                !((1ULL << 62) & occupied) &&
+                ((1ULL << 63) & board.getPieceBitboard(Piece::BlackRook)))
+            {
+                moves.emplace_back(square, 62, MoveType::KingCastle);
+            }
+            if (board.isBlackCastleQueenSide() &&
+                !board.isSquareAttacked(59, true) &&
+                !board.isSquareAttacked(58, true) &&
+                !board.isSquareAttacked(60, true) &&
+                !((1ULL << 59) & occupied) &&
+                !((1ULL << 58) & occupied) &&
+                !((1ULL << 57) & occupied) &&
+                ((1ULL << 56) & board.getPieceBitboard(Piece::BlackRook)))
+            {
+                moves.emplace_back(square, 58, MoveType::QueenCastle);
+            }
+        }
     }
 }
 
@@ -161,6 +217,25 @@ void MoveGenerator::generatePawnMoves(const Board &board, std::vector<Move> &mov
         }
 
         // 5. En passant
+
+        int enPassantSquare = board.getEnPassantSquare();
+        if (enPassantSquare != -1)
+        {
+            if (whiteToMove)
+            {
+                if (((1ULL) << enPassantSquare) & AttackTables::whitePawnAttacks[square])
+                {
+                    moves.emplace_back(square, enPassantSquare, MoveType::EnPassant);
+                }
+            }
+            else
+            {
+                if (((1ULL) << enPassantSquare) & AttackTables::blackPawnAttacks[square])
+                {
+                    moves.emplace_back(square, enPassantSquare, MoveType::EnPassant);
+                }
+            }
+        }
 
         pawn &= (pawn - 1);
     }
