@@ -15,7 +15,7 @@ Move Search::findBestMove(Board board, int depth)
     {
         Board tempBoard = board;
         tempBoard.makeMove(move);
-        int score = minimax(tempBoard, depth - 1);
+        int score = minimax(tempBoard, depth - 1, INT_MIN, INT_MAX);
         if (board.isWhiteToMove())
         {
             if (score > maxScore)
@@ -36,7 +36,7 @@ Move Search::findBestMove(Board board, int depth)
     return bestMove;
 }
 
-int Search::minimax(Board board, int depth)
+int Search::minimax(Board board, int depth, int alpha, int beta)
 {
     if (depth == 0)
         return Evaluation::evaluate(board);
@@ -45,7 +45,7 @@ int Search::minimax(Board board, int depth)
 
     if (moves.empty())
     {
-        const int MATE_SCORE = 100000;
+        constexpr int MATE_SCORE = 100000;
         if (board.isWhiteToMove())
         {
             if (board.isSquareAttacked(board.getKingSquare(true), false))
@@ -78,8 +78,13 @@ int Search::minimax(Board board, int depth)
             Board tempBoard = board;
             tempBoard.makeMove(move);
 
-            int score = minimax(tempBoard, depth - 1);
+            int score = minimax(tempBoard, depth - 1, alpha, beta);
             bestScore = std::max(bestScore, score);
+            alpha = std::max(alpha, bestScore);
+            if (alpha >= beta)
+            {
+                break;
+            }
         }
         return bestScore;
     }
@@ -90,9 +95,13 @@ int Search::minimax(Board board, int depth)
         {
             Board tempBoard = board;
             tempBoard.makeMove(move);
-
-            int score = minimax(tempBoard, depth - 1);
+            int score = minimax(tempBoard, depth - 1, alpha, beta);
             bestScore = std::min(bestScore, score);
+            beta = std::min(beta, bestScore);
+            if (alpha >= beta)
+            {
+                break;
+            }
         }
         return bestScore;
     }
