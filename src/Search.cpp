@@ -8,7 +8,11 @@ Move Search::findBestMove(Board board, int depth)
     // TODO
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
-    Move bestMove;
+    if (moves.empty())
+    {
+        // Handle checkmate/stalemate however you prefer
+    }
+    Move bestMove = moves[0];
     int maxScore = board.isWhiteToMove() ? INT_MIN : INT_MAX;
 
     for (const Move &move : moves)

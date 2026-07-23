@@ -24,7 +24,6 @@ private:
     Piece promotionPiece;
 
 public:
-    Move();
     Move(uint8_t from, uint8_t to, MoveType moveType,
          Piece promotionPiece = Piece::None);
     uint8_t getFrom() const;

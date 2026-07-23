@@ -18,4 +18,6 @@ add_executable(
     src/MoveGenerator.cpp
     src/Perft.cpp
     src/Evaluation.cpp
+    src/Search.cpp
+    src/PieceSquareTables.cpp
 )

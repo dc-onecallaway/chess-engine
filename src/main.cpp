@@ -4,31 +4,27 @@
 #include "../include/MoveGenerator.h"
 #include "../include/Perft.h"
 #include "../include/Evaluation.h"
+#include "../include/Search.h"
 
 int main()
 {
     AttackTables::initialize();
     std::cout << "Chess Engine Started!" << std::endl;
-    Board b1;
+    Board board;
     MoveGenerator generator;
-    b1.initialize();
-    b1.print();
-    std::vector<Move> moves;
-    // AttackTables::print(AttackTables::kingAttacks[0]);
-    generator.generateKingMoves(b1, moves);
-    std::cout << moves.size() << '\n';
-    // generator.generateKnightMoves(b1, moves);
+    board.initialize();
+    board.print();
+    int turns = 20;
+    Search search;
 
-    for (Move temp : moves)
+    while (turns--)
     {
-        std::cout << (int)(temp.getFrom()) << " - " << (int)(temp.getTo()) << std::endl;
+        std::cout << "Searching...\n";
+        Move best = search.findBestMove(board, 4);
+        std::cout << "Search finished\n";
+        board.makeMove(best);
+        board.print();
     }
-
-    AttackTables::print(AttackTables::whitePawnAttacks[28]);
-    std::cout << '\n';
-    AttackTables::print(AttackTables::blackPawnAttacks[28]);
-    std::cout << Perft::perft(b1, 6) << std::endl;
-    std::cout << Evaluation::evaluate(b1) << std::endl;
 
     return 0;
 }
