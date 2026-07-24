@@ -20,4 +20,6 @@ add_executable(
     src/Evaluation.cpp
     src/Search.cpp
     src/PieceSquareTables.cpp
+    src/UCI.cpp
+    src/UCIUtils.cpp
 )

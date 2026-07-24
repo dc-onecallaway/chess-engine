@@ -26,3 +26,10 @@ Piece Move::getPromotionPiece() const
 {
     return promotionPiece;
 }
+Move::Move()
+    : from(0),
+      to(0),
+      moveType(MoveType::Quiet),
+      promotionPiece(Piece::None)
+{
+}
