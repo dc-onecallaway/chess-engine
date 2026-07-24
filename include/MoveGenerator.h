@@ -15,7 +15,16 @@ public:
     void generateBishopMoves(const Board &board, std::vector<Move> &moves);
     void generateRookMoves(const Board &board, std::vector<Move> &moves);
     void generateQueenMoves(const Board &board, std::vector<Move> &moves);
-    std::vector<Move> generateLegalMoves(const Board &board);
+
+    void generatePawnCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+    void generateKnightCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+    void generateBishopCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+    void generateRookCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+    void generateQueenCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+    void generateKingCaptures(const Board &board, std::vector<Move> &pseudoMoves);
+
+    std::vector<Move> generateLegalMoves(Board &board);
+    std::vector<Move> generateCaptureMoves(Board &board);
 };
 
 #endif

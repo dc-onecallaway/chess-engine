@@ -38,7 +38,8 @@ std::string UCIUtils::moveToString(const Move &move)
 Move UCIUtils::parseMove(const Board &board, const std::string &moveString)
 {
     MoveGenerator generator;
-    auto legalMoves = generator.generateLegalMoves(board);
+    Board temp = board;
+    auto legalMoves = generator.generateLegalMoves(temp);
 
     for (const Move &move : legalMoves)
     {

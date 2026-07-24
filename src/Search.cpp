@@ -2,8 +2,11 @@
 #include "../include/MoveGenerator.h"
 #include "../include/Evaluation.h"
 #include "../include/Move.h"
+#include <iostream>
 
-Move Search::findBestMove(Board board, int depth)
+static long long nodes = 0;
+
+Move Search::findBestMove(Board &board, int depth)
 {
     // TODO
     MoveGenerator generator;
@@ -17,9 +20,9 @@ Move Search::findBestMove(Board board, int depth)
 
     for (const Move &move : moves)
     {
-        Board tempBoard = board;
-        tempBoard.makeMove(move);
-        int score = minimax(tempBoard, depth - 1, INT_MIN, INT_MAX);
+        board.makeMove(move);
+        int score = minimax(board, depth - 1, INT_MIN, INT_MAX);
+        board.undoMove();
         if (board.isWhiteToMove())
         {
             if (score > maxScore)
@@ -37,13 +40,17 @@ Move Search::findBestMove(Board board, int depth)
             }
         }
     }
+    std::cout << "Nodes: " << nodes << '\n';
+    nodes = 0;
     return bestMove;
 }
 
-int Search::minimax(Board board, int depth, int alpha, int beta)
+int Search::minimax(Board &board, int depth, int alpha, int beta)
 {
+    nodes++;
     if (depth == 0)
-        return Evaluation::evaluate(board);
+        return quiescence(board, alpha, beta);
+    ;
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
 
@@ -54,7 +61,7 @@ int Search::minimax(Board board, int depth, int alpha, int beta)
         {
             if (board.isSquareAttacked(board.getKingSquare(true), false))
             {
-                return -MATE_SCORE;
+                return -MATE_SCORE - depth;
             }
             else
             {
@@ -65,7 +72,7 @@ int Search::minimax(Board board, int depth, int alpha, int beta)
         {
             if (board.isSquareAttacked(board.getKingSquare(false), true))
             {
-                return MATE_SCORE;
+                return MATE_SCORE + depth;
             }
             else
             {
@@ -79,10 +86,10 @@ int Search::minimax(Board board, int depth, int alpha, int beta)
         int bestScore = INT_MIN;
         for (const Move &move : moves)
         {
-            Board tempBoard = board;
-            tempBoard.makeMove(move);
 
-            int score = minimax(tempBoard, depth - 1, alpha, beta);
+            board.makeMove(move);
+            int score = minimax(board, depth - 1, alpha, beta);
+            board.undoMove();
             bestScore = std::max(bestScore, score);
             alpha = std::max(alpha, bestScore);
             if (alpha >= beta)
@@ -97,9 +104,9 @@ int Search::minimax(Board board, int depth, int alpha, int beta)
         int bestScore = INT_MAX;
         for (const Move &move : moves)
         {
-            Board tempBoard = board;
-            tempBoard.makeMove(move);
-            int score = minimax(tempBoard, depth - 1, alpha, beta);
+            board.makeMove(move);
+            int score = minimax(board, depth - 1, alpha, beta);
+            board.undoMove();
             bestScore = std::min(bestScore, score);
             beta = std::min(beta, bestScore);
             if (alpha >= beta)
@@ -108,5 +115,55 @@ int Search::minimax(Board board, int depth, int alpha, int beta)
             }
         }
         return bestScore;
+    }
+}
+
+int Search::quiescence(Board &board, int alpha, int beta)
+{
+    int standPat = Evaluation::evaluate(board);
+
+    if (board.isWhiteToMove())
+    {
+        if (standPat >= beta)
+        {
+            return beta;
+        }
+        alpha = std::max(alpha, standPat);
+        MoveGenerator generator;
+
+        auto moves = generator.generateCaptureMoves(board);
+
+        for (const Move &move : moves)
+        {
+            board.makeMove(move);
+            int score = quiescence(board, alpha, beta);
+            board.undoMove();
+            alpha = std::max(alpha, score);
+            if (alpha >= beta)
+                break;
+        }
+        return alpha;
+    }
+    else
+    {
+        if (standPat <= alpha)
+        {
+            return alpha;
+        }
+        beta = std::min(beta, standPat);
+        MoveGenerator generator;
+
+        auto moves = generator.generateCaptureMoves(board);
+
+        for (const Move &move : moves)
+        {
+            board.makeMove(move);
+            int score = quiescence(board, alpha, beta);
+            board.undoMove();
+            beta = std::min(beta, score);
+            if (alpha >= beta)
+                break;
+        }
+        return beta;
     }
 }

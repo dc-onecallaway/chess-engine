@@ -11,7 +11,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(whitePawn);
         score += 100;
-        score += PieceSquareTables::PawnTable[square];
+        score += PieceSquareTables::PawnTable[PieceSquareTables::mirrorSquare(square)];
         whitePawn &= (whitePawn - 1);
     }
 
@@ -20,7 +20,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(blackPawn);
         score -= 100;
-        score -= PieceSquareTables::PawnTable[PieceSquareTables::mirrorSquare(square)];
+        score -= PieceSquareTables::PawnTable[square];
         blackPawn &= (blackPawn - 1);
     }
 
@@ -29,7 +29,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(whiteKnight);
         score += 320;
-        score += PieceSquareTables::KnightTable[square];
+        score += PieceSquareTables::KnightTable[PieceSquareTables::mirrorSquare(square)];
         whiteKnight &= (whiteKnight - 1);
     }
 
@@ -38,7 +38,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(blackKnight);
         score -= 320;
-        score -= PieceSquareTables::KnightTable[PieceSquareTables::mirrorSquare(square)];
+        score -= PieceSquareTables::KnightTable[square];
         blackKnight &= (blackKnight - 1);
     }
 
@@ -47,7 +47,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(whiteBishop);
         score += 330;
-        score += PieceSquareTables::BishopTable[square];
+        score += PieceSquareTables::BishopTable[PieceSquareTables::mirrorSquare(square)];
         whiteBishop &= (whiteBishop - 1);
     }
 
@@ -56,7 +56,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(blackBishop);
         score -= 330;
-        score -= PieceSquareTables::BishopTable[PieceSquareTables::mirrorSquare(square)];
+        score -= PieceSquareTables::BishopTable[square];
         blackBishop &= (blackBishop - 1);
     }
     uint64_t whiteRook = board.getPieceBitboard(Piece::WhiteRook);
@@ -64,7 +64,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(whiteRook);
         score += 500;
-        score += PieceSquareTables::RookTable[square];
+        score += PieceSquareTables::RookTable[PieceSquareTables::mirrorSquare(square)];
         whiteRook &= (whiteRook - 1);
     }
 
@@ -72,8 +72,8 @@ int Evaluation::evaluate(const Board &board)
     while (blackRook)
     {
         int square = __builtin_ctzll(blackRook);
-        score -= 900;
-        score -= PieceSquareTables::RookTable[PieceSquareTables::mirrorSquare(square)];
+        score -= 500;
+        score -= PieceSquareTables::RookTable[square];
         blackRook &= (blackRook - 1);
     }
     uint64_t whiteQueen = board.getPieceBitboard(Piece::WhiteQueen);
@@ -81,7 +81,7 @@ int Evaluation::evaluate(const Board &board)
     {
         int square = __builtin_ctzll(whiteQueen);
         score += 900;
-        score += PieceSquareTables::QueenTable[square];
+        score += PieceSquareTables::QueenTable[PieceSquareTables::mirrorSquare(square)];
         whiteQueen &= (whiteQueen - 1);
     }
 
@@ -89,11 +89,11 @@ int Evaluation::evaluate(const Board &board)
     while (blackQueen)
     {
         int square = __builtin_ctzll(blackQueen);
-        score -= 500;
-        score -= PieceSquareTables::QueenTable[PieceSquareTables::mirrorSquare(square)];
+        score -= 900;
+        score -= PieceSquareTables::QueenTable[square];
         blackQueen &= (blackQueen - 1);
     }
-    score += PieceSquareTables::KingTable[board.getKingSquare(true)];
-    score -= PieceSquareTables::KingTable[PieceSquareTables::mirrorSquare(board.getKingSquare(false))];
+    score += PieceSquareTables::KingTable[PieceSquareTables::mirrorSquare(board.getKingSquare(true))];
+    score -= PieceSquareTables::KingTable[board.getKingSquare(false)];
     return score;
 }

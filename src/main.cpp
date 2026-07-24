@@ -6,34 +6,45 @@
 #include "../include/Evaluation.h"
 #include "../include/Search.h"
 #include "../include/UCI.h"
-
-// int main()
-// {
-//     AttackTables::initialize();
-//     std::cout << "Chess Engine Started!" << std::endl;
-//     Board board;
-//     MoveGenerator generator;
-//     board.initialize();
-//     board.print();
-//     int turns = 20;
-//     Search search;
-
-//     while (turns--)
-//     {
-//         std::cout << "Searching...\n";
-//         Move best = search.findBestMove(board, 4);
-//         std::cout << "Search finished\n";
-//         board.makeMove(best);
-//         board.print();
-//     }
-
-//     return 0;
-// }
+#include "../include/UCIUtils.h"
+#include <chrono>
 
 int main()
 {
     AttackTables::initialize();
+    std::cout << "Chess Engine Started!" << std::endl;
+    Board board;
+    MoveGenerator generator;
+    board.initialize();
+    board.print();
+    int turns = 20;
+    Search search;
 
-    UCI uci;
-    uci.loop();
+    while (turns--)
+    {
+        // std::string s;
+        // std::getline(std::cin, s);
+        // Move move = UCIUtils::parseMove(board, s);
+        // board.makeMove(move);
+        // board.print(); // show your move
+        std::cout << "Searching...\n";
+        auto start = std::chrono::steady_clock::now();
+        Move best = search.findBestMove(board, 4);
+        auto end = std::chrono::steady_clock::now();
+        std::cout << "Search took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+        std::cout << "Search finished\n";
+        std::cout << "Engine plays: " << UCIUtils::moveToString(best) << "\n";
+        board.makeMove(best);
+        board.print();
+    }
+
+    return 0;
 }
+
+// int main()
+// {
+//     AttackTables::initialize();
+
+//     UCI uci;
+//     uci.loop();
+// }

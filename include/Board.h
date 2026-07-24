@@ -4,6 +4,24 @@
 #include <cstdint>
 #include "Piece.h"
 #include "Move.h"
+#include <vector>
+
+struct UndoInfo
+{
+    Move move;
+
+    Piece movedPiece;
+    Piece capturedPiece;
+
+    bool whiteCastleKingSide;
+    bool whiteCastleQueenSide;
+    bool blackCastleKingSide;
+    bool blackCastleQueenSide;
+
+    int enPassantSquare;
+    int halfMoveClock;
+    int fullMoveNumber;
+};
 
 class Board
 {
@@ -18,10 +36,10 @@ private:
     bool blackCastleQueenSide;
 
     int enPassantSquare;
-
     int halfMoveClock;
-
     int fullMoveNumber;
+
+    std::vector<UndoInfo> history;
 
 public:
     void initialize();
@@ -50,6 +68,7 @@ public:
     void addPiece(Piece piece, int square);
     Piece getPieceOnSquare(int square) const;
     void makeMove(const Move &move);
+    void undoMove();
     int getKingSquare(bool white) const;
 };
 

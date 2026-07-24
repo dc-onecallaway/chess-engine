@@ -7,8 +7,9 @@
 class Search
 {
 public:
-    static Move findBestMove(Board board, int depth);
-    static int minimax(Board board, int depth, int alpha, int beta);
+    static Move findBestMove(Board &board, int depth);
+    static int minimax(Board &board, int depth, int alpha, int beta);
+    static int quiescence(Board &board, int alpha, int beta);
 };
 
 #endif

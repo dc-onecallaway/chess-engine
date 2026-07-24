@@ -115,111 +115,34 @@ int Board::getEnPassantSquare() const
 
 bool Board::isSquareAttacked(int square, bool byWhite) const
 {
-    // 1. Get the occupancy
     uint64_t occupied = getOccupied();
+    uint64_t sq = 1ULL << square;
 
-    // 2. Get all attacking pieces of the specified color
-    uint64_t pawns;
-    uint64_t knights;
-    uint64_t bishops;
-    uint64_t rooks;
-    uint64_t queens;
-    uint64_t king;
+    int base = byWhite ? 0 : 6; // your pieces[] layout: 0-5 white, 6-11 black
 
-    if (byWhite)
-    {
-        pawns = pieces[static_cast<int>(Piece::WhitePawn)];
-        knights = pieces[static_cast<int>(Piece::WhiteKnight)];
-        bishops = pieces[static_cast<int>(Piece::WhiteBishop)];
-        rooks = pieces[static_cast<int>(Piece ::WhiteRook)];
-        queens = pieces[static_cast<int>(Piece::WhiteQueen)];
-        king = pieces[static_cast<int>(Piece::WhiteKing)];
-    }
-    else
-    {
-        pawns = pieces[static_cast<int>(Piece::BlackPawn)];
-        knights = pieces[static_cast<int>(Piece::BlackKnight)];
-        bishops = pieces[static_cast<int>(Piece::BlackBishop)];
-        rooks = pieces[static_cast<int>(Piece ::BlackRook)];
-        queens = pieces[static_cast<int>(Piece::BlackQueen)];
-        king = pieces[static_cast<int>(Piece::BlackKing)];
-    }
+    // Pawns: use the OPPOSITE color's pawn-attack table from `square`,
+    // since "does a white pawn attack square X" is the mirror of
+    // "does square X attack-pattern (as if black) reach a white pawn"
+    uint64_t pawnAttackers = byWhite
+                                 ? AttackTables::blackPawnAttacks[square] & pieces[base + 0]  // WhitePawn
+                                 : AttackTables::whitePawnAttacks[square] & pieces[base + 0]; // BlackPawn
+    if (pawnAttackers)
+        return true;
 
-    // 3. Pawn attacks
-    while (pawns)
-    {
-        int pawnSquare = __builtin_ctzll(pawns);
-        uint64_t attacks = byWhite ? AttackTables::whitePawnAttacks[pawnSquare] : AttackTables::blackPawnAttacks[pawnSquare];
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        pawns &= pawns - 1;
-    }
-    // 4. Knight attacks
+    if (AttackTables::knightAttacks[square] & pieces[base + 1])
+        return true; // Knight
 
-    while (knights)
-    {
-        int knightSquare = __builtin_ctzll(knights);
-        uint64_t attacks = AttackTables::knightAttacks[knightSquare];
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        knights &= knights - 1;
-    }
+    uint64_t bishopQueenAttacks = AttackTables::getBishopAttacks(square, occupied);
+    if (bishopQueenAttacks & (pieces[base + 2] | pieces[base + 4]))
+        return true; // Bishop | Queen
 
-    // 5. Bishop attacks
+    uint64_t rookQueenAttacks = AttackTables::getRookAttacks(square, occupied);
+    if (rookQueenAttacks & (pieces[base + 3] | pieces[base + 4]))
+        return true; // Rook | Queen
 
-    while (bishops)
-    {
-        int bishopSquare = __builtin_ctzll(bishops);
-        uint64_t attacks = AttackTables::getBishopAttacks(bishopSquare, occupied);
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        bishops &= bishops - 1;
-    }
+    if (AttackTables::kingAttacks[square] & pieces[base + 5])
+        return true; // King
 
-    // 6. Rook attacks
-
-    while (rooks)
-    {
-        int rookSquare = __builtin_ctzll(rooks);
-        uint64_t attacks = AttackTables::getRookAttacks(rookSquare, occupied);
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        rooks &= rooks - 1;
-    }
-
-    // 7. Queen attacks
-
-    while (queens)
-    {
-        int queenSquare = __builtin_ctzll(queens);
-        uint64_t attacks = AttackTables::getQueenAttacks(queenSquare, occupied);
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        queens &= queens - 1;
-    }
-
-    // 8. King attacks
-
-    while (king)
-    {
-        int kingSquare = __builtin_ctzll(king);
-        uint64_t attacks = AttackTables::kingAttacks[kingSquare];
-        if (attacks & (1ULL << square))
-        {
-            return true;
-        }
-        king &= king - 1;
-    }
     return false;
 }
 
@@ -320,6 +243,38 @@ Piece Board::getPieceOnSquare(int square) const
 
 void Board::makeMove(const Move &move)
 {
+    // 0. Undo Information
+    UndoInfo undo;
+
+    undo.move = move;
+    undo.movedPiece = getPieceOnSquare(move.getFrom());
+    if (move.getMoveType() == MoveType::EnPassant)
+    {
+        if (whiteToMove)
+        {
+            undo.capturedPiece = getPieceOnSquare(move.getTo() - 8);
+        }
+        else
+        {
+            undo.capturedPiece = getPieceOnSquare(move.getTo() + 8);
+        }
+    }
+    else
+    {
+        undo.capturedPiece = getPieceOnSquare(move.getTo());
+    }
+
+    undo.whiteCastleKingSide = whiteCastleKingSide;
+    undo.whiteCastleQueenSide = whiteCastleQueenSide;
+    undo.blackCastleKingSide = blackCastleKingSide;
+    undo.blackCastleQueenSide = blackCastleQueenSide;
+
+    undo.enPassantSquare = enPassantSquare;
+    undo.halfMoveClock = halfMoveClock;
+    undo.fullMoveNumber = fullMoveNumber;
+
+    history.push_back(undo);
+
     // 1. Find moving piece
     Piece movingPiece = getPieceOnSquare(move.getFrom());
 
@@ -440,4 +395,72 @@ void Board::makeMove(const Move &move)
 int Board::getKingSquare(bool white) const
 {
     return __builtin_ctzll(pieces[static_cast<int>(white ? Piece::WhiteKing : Piece::BlackKing)]);
+}
+
+void Board::undoMove()
+{
+    UndoInfo undo = history.back();
+    history.pop_back();
+    whiteToMove = !whiteToMove;
+
+    whiteCastleKingSide = undo.whiteCastleKingSide;
+    whiteCastleQueenSide = undo.whiteCastleQueenSide;
+    blackCastleKingSide = undo.blackCastleKingSide;
+    blackCastleQueenSide = undo.blackCastleQueenSide;
+
+    enPassantSquare = undo.enPassantSquare;
+    halfMoveClock = undo.halfMoveClock;
+    fullMoveNumber = undo.fullMoveNumber;
+
+    int to = undo.move.getTo();
+    int from = undo.move.getFrom();
+    MoveType mType = undo.move.getMoveType();
+
+    if (mType == MoveType::Quiet)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.movedPiece, to);
+    }
+    else if (mType == MoveType::Capture)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.movedPiece, to);
+        addPiece(undo.capturedPiece, to);
+    }
+    else if (mType == MoveType ::EnPassant)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.movedPiece, to);
+        int capturedSquare =
+            whiteToMove ? to - 8 : to + 8;
+
+        addPiece(undo.capturedPiece, capturedSquare);
+    }
+    else if (mType == MoveType ::Promotion)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.move.getPromotionPiece(), to);
+    }
+    else if (mType == MoveType::PromotionCapture)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.move.getPromotionPiece(), to);
+        addPiece(undo.capturedPiece, to);
+    }
+    else if (mType == MoveType::KingCastle)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.movedPiece, to);
+        Piece rook = getPieceOnSquare(to - 1);
+        removePiece(rook, to - 1);
+        addPiece(rook, from + 3);
+    }
+    else if (mType == MoveType::QueenCastle)
+    {
+        addPiece(undo.movedPiece, from);
+        removePiece(undo.movedPiece, to);
+        Piece rook = getPieceOnSquare(to + 1);
+        removePiece(rook, to + 1);
+        addPiece(rook, from - 4);
+    }
 }
