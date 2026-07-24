@@ -29,7 +29,7 @@ int main()
         // board.print(); // show your move
         std::cout << "Searching...\n";
         auto start = std::chrono::steady_clock::now();
-        Move best = search.findBestMove(board, 4);
+        Move best = search.findBestMove(board, 5);
         auto end = std::chrono::steady_clock::now();
         std::cout << "Search took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
         std::cout << "Search finished\n";

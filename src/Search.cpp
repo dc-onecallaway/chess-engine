@@ -2,6 +2,7 @@
 #include "../include/MoveGenerator.h"
 #include "../include/Evaluation.h"
 #include "../include/Move.h"
+#include "../include/MoveOrdering.h"
 #include <iostream>
 
 static long long nodes = 0;
@@ -11,6 +12,7 @@ Move Search::findBestMove(Board &board, int depth)
     // TODO
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
+    MoveOrdering::orderMoves(board, moves);
     if (moves.empty())
     {
         // Handle checkmate/stalemate however you prefer
@@ -53,6 +55,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
     ;
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
+    MoveOrdering::orderMoves(board, moves);
 
     if (moves.empty())
     {
@@ -132,6 +135,7 @@ int Search::quiescence(Board &board, int alpha, int beta)
         MoveGenerator generator;
 
         auto moves = generator.generateCaptureMoves(board);
+        MoveOrdering::orderMoves(board, moves);
 
         for (const Move &move : moves)
         {
@@ -154,6 +158,7 @@ int Search::quiescence(Board &board, int alpha, int beta)
         MoveGenerator generator;
 
         auto moves = generator.generateCaptureMoves(board);
+        MoveOrdering::orderMoves(board, moves);
 
         for (const Move &move : moves)
         {

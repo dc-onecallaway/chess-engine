@@ -22,4 +22,5 @@ add_executable(
     src/PieceSquareTables.cpp
     src/UCI.cpp
     src/UCIUtils.cpp
+    src/MoveOrdering.cpp
 )
