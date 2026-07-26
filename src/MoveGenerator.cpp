@@ -1,5 +1,6 @@
 #include "../include/MoveGenerator.h"
 #include "../include/AttackTables.h"
+#include "../include/MagicBitboards.h"
 
 void MoveGenerator::generateKnightMoves(const Board &board, std::vector<Move> &moves)
 {
@@ -254,7 +255,7 @@ void MoveGenerator::generateBishopMoves(const Board &board, std::vector<Move> &m
     while (bishops)
     {
         int square = __builtin_ctzll(bishops);
-        uint64_t attacks = AttackTables::getBishopAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getBishopAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)
@@ -288,7 +289,7 @@ void MoveGenerator::generateRookMoves(const Board &board, std::vector<Move> &mov
     while (rooks)
     {
         int square = __builtin_ctzll(rooks);
-        uint64_t attacks = AttackTables::getRookAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getRookAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)
@@ -322,7 +323,7 @@ void MoveGenerator::generateQueenMoves(const Board &board, std::vector<Move> &mo
     while (queens)
     {
         int square = __builtin_ctzll(queens);
-        uint64_t attacks = AttackTables::getQueenAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getQueenAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)
@@ -479,7 +480,7 @@ void MoveGenerator::generateBishopCaptures(const Board &board, std::vector<Move>
     while (bishops)
     {
         int square = __builtin_ctzll(bishops);
-        uint64_t attacks = AttackTables::getBishopAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getBishopAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)
@@ -509,7 +510,7 @@ void MoveGenerator::generateRookCaptures(const Board &board, std::vector<Move> &
     while (rooks)
     {
         int square = __builtin_ctzll(rooks);
-        uint64_t attacks = AttackTables::getRookAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getRookAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)
@@ -539,7 +540,7 @@ void MoveGenerator::generateQueenCaptures(const Board &board, std::vector<Move> 
     while (queens)
     {
         int square = __builtin_ctzll(queens);
-        uint64_t attacks = AttackTables::getQueenAttacks(square, occupied);
+        uint64_t attacks = MagicBitboards::getQueenAttacks(square, occupied);
         attacks &= ~ownOccupied;
 
         while (attacks)

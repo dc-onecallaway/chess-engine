@@ -1,5 +1,6 @@
 #include "../include/Board.h"
 #include "../include/AttackTables.h"
+#include "../include/MagicBitboards.h"
 #include <iostream>
 #include <map>
 
@@ -132,11 +133,11 @@ bool Board::isSquareAttacked(int square, bool byWhite) const
     if (AttackTables::knightAttacks[square] & pieces[base + 1])
         return true; // Knight
 
-    uint64_t bishopQueenAttacks = AttackTables::getBishopAttacks(square, occupied);
+    uint64_t bishopQueenAttacks = MagicBitboards::getBishopAttacks(square, occupied);
     if (bishopQueenAttacks & (pieces[base + 2] | pieces[base + 4]))
         return true; // Bishop | Queen
 
-    uint64_t rookQueenAttacks = AttackTables::getRookAttacks(square, occupied);
+    uint64_t rookQueenAttacks = MagicBitboards::getRookAttacks(square, occupied);
     if (rookQueenAttacks & (pieces[base + 3] | pieces[base + 4]))
         return true; // Rook | Queen
 

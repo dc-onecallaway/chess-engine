@@ -23,4 +23,5 @@ add_executable(
     src/UCI.cpp
     src/UCIUtils.cpp
     src/MoveOrdering.cpp
+    src/MagicBitboards.cpp
 )

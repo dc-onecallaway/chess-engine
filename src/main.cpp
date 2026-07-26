@@ -7,44 +7,51 @@
 #include "../include/Search.h"
 #include "../include/UCI.h"
 #include "../include/UCIUtils.h"
+#include "../include/MagicBitboards.h"
 #include <chrono>
-
-int main()
-{
-    AttackTables::initialize();
-    std::cout << "Chess Engine Started!" << std::endl;
-    Board board;
-    MoveGenerator generator;
-    board.initialize();
-    board.print();
-    int turns = 20;
-    Search search;
-
-    while (turns--)
-    {
-        // std::string s;
-        // std::getline(std::cin, s);
-        // Move move = UCIUtils::parseMove(board, s);
-        // board.makeMove(move);
-        // board.print(); // show your move
-        std::cout << "Searching...\n";
-        auto start = std::chrono::steady_clock::now();
-        Move best = search.findBestMove(board, 5);
-        auto end = std::chrono::steady_clock::now();
-        std::cout << "Search took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
-        std::cout << "Search finished\n";
-        std::cout << "Engine plays: " << UCIUtils::moveToString(best) << "\n";
-        board.makeMove(best);
-        board.print();
-    }
-
-    return 0;
-}
 
 // int main()
 // {
 //     AttackTables::initialize();
+//     std::cout << "Chess Engine Started!" << std::endl;
+//     Board board;
+//     MoveGenerator generator;
+//     board.initialize();
+//     MagicBitboards::initialize();
+//     board.print();
+//     int turns = 20;
+//     Search search;
 
-//     UCI uci;
-//     uci.loop();
+//     while (turns--)
+//     {
+//         // std::string s;
+//         // std::getline(std::cin, s);
+//         // Move move = UCIUtils::parseMove(board, s);
+//         // board.makeMove(move);
+//         // board.print(); // show your move
+//         std::cout << "Searching...\n";
+//         auto start = std::chrono::steady_clock::now();
+//         Move best = search.findBestMove(board, 5);
+//         auto end = std::chrono::steady_clock::now();
+//         std::cout << "Search took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+//         std::cout << "Search finished\n";
+//         std::cout << "Engine plays: " << UCIUtils::moveToString(best) << "\n";
+//         board.makeMove(best);
+//         board.print();
+//     }
+
+//     // if (!MagicBitboards::verifyMagicNumbers())
+//     // {
+//     //     std::cout << "Verification failed!\n";
+//     // }
+//     return 0;
 // }
+
+int main()
+{
+    AttackTables::initialize();
+    MagicBitboards::initialize();
+
+    UCI uci;
+    uci.loop();
+}
