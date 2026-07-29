@@ -3,6 +3,7 @@
 #include "../include/Evaluation.h"
 #include "../include/Move.h"
 #include "../include/MoveOrdering.h"
+#include "../include/TranspositionTable.h"
 #include <iostream>
 
 static long long nodes = 0;
@@ -50,6 +51,29 @@ Move Search::findBestMove(Board &board, int depth)
 int Search::minimax(Board &board, int depth, int alpha, int beta)
 {
     nodes++;
+    TTEntry entry;
+
+    if (TranspositionTable::probe(board.getHashKey(), entry))
+    {
+        if (entry.depth >= depth)
+        {
+            if (entry.flag == TTFlag::Exact)
+                return entry.score;
+
+            if (entry.flag == TTFlag::LowerBound)
+                alpha = std::max(alpha, entry.score);
+
+            if (entry.flag == TTFlag::UpperBound)
+                beta = std::min(beta, entry.score);
+
+            if (alpha >= beta)
+                return entry.score;
+        }
+    }
+
+    int originalAlpha = alpha;
+    int originalBeta = beta;
+
     if (depth == 0)
         return quiescence(board, alpha, beta);
     ;
@@ -100,6 +124,21 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
                 break;
             }
         }
+        TTFlag flag;
+
+        if (bestScore <= originalAlpha)
+            flag = TTFlag::UpperBound;
+        else if (bestScore >= beta)
+            flag = TTFlag::LowerBound;
+        else
+            flag = TTFlag::Exact;
+
+        TranspositionTable::store(
+            board.getHashKey(),
+            depth,
+            bestScore,
+            flag);
+
         return bestScore;
     }
     else
@@ -117,6 +156,21 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
                 break;
             }
         }
+        TTFlag flag;
+
+        if (bestScore <= originalAlpha)
+            flag = TTFlag::UpperBound;
+        else if (bestScore >= originalBeta)
+            flag = TTFlag::LowerBound;
+        else
+            flag = TTFlag::Exact;
+
+        TranspositionTable::store(
+            board.getHashKey(),
+            depth,
+            bestScore,
+            flag);
+
         return bestScore;
     }
 }

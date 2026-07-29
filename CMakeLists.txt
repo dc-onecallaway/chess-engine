@@ -24,4 +24,6 @@ add_executable(
     src/UCIUtils.cpp
     src/MoveOrdering.cpp
     src/MagicBitboards.cpp
+    src/Zobrist.cpp
+    src/TranspositionTable.cpp
 )

@@ -39,6 +39,8 @@ private:
     int halfMoveClock;
     int fullMoveNumber;
 
+    uint64_t hashKey;
+
     std::vector<UndoInfo> history;
 
 public:
@@ -70,6 +72,8 @@ public:
     void makeMove(const Move &move);
     void undoMove();
     int getKingSquare(bool white) const;
+    uint64_t getHashKey() const;
+    void generateHash();
 };
 
 #endif

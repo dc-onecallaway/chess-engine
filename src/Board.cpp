@@ -1,6 +1,7 @@
 #include "../include/Board.h"
 #include "../include/AttackTables.h"
 #include "../include/MagicBitboards.h"
+#include "../include/Zobrist.h"
 #include <iostream>
 #include <map>
 
@@ -275,12 +276,38 @@ void Board::makeMove(const Move &move)
     undo.fullMoveNumber = fullMoveNumber;
 
     history.push_back(undo);
+    // ----------Zobrist Hashing----------
+
+    // Side to move
+    hashKey ^= Zobrist::sideKey;
+
+    // Castling rights
+    int castleRights = 0;
+
+    if (whiteCastleKingSide)
+        castleRights |= 1;
+    if (whiteCastleQueenSide)
+        castleRights |= 2;
+    if (blackCastleKingSide)
+        castleRights |= 4;
+    if (blackCastleQueenSide)
+        castleRights |= 8;
+
+    hashKey ^= Zobrist::castleKeys[castleRights];
+
+    // En passant
+    if (enPassantSquare != -1)
+    {
+        int file = enPassantSquare % 8;
+        hashKey ^= Zobrist::enPassantKeys[file];
+    }
 
     // 1. Find moving piece
     Piece movingPiece = getPieceOnSquare(move.getFrom());
 
     // 2. Remove moving piece
     removePiece(movingPiece, move.getFrom());
+    hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getFrom()];
 
     Piece capturedPiece = getPieceOnSquare(move.getTo());
     MoveType mType = move.getMoveType();
@@ -289,41 +316,55 @@ void Board::makeMove(const Move &move)
     {
 
         addPiece(movingPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getTo()];
     }
     else if (mType == MoveType::Capture)
     {
         removePiece(capturedPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(capturedPiece)][move.getTo()];
         addPiece(movingPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getTo()];
     }
     else if (mType == MoveType::Promotion)
     {
         addPiece(move.getPromotionPiece(), move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(move.getPromotionPiece())][move.getTo()];
     }
     else if (mType == MoveType::PromotionCapture)
     {
         removePiece(capturedPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(capturedPiece)][move.getTo()];
         addPiece(move.getPromotionPiece(), move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(move.getPromotionPiece())][move.getTo()];
     }
     else if (mType == MoveType::EnPassant)
     {
         int removingSquare = whiteToMove ? move.getTo() - 8 : move.getTo() + 8;
         capturedPiece = getPieceOnSquare(removingSquare);
         removePiece(capturedPiece, removingSquare);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(capturedPiece)][removingSquare];
         addPiece(movingPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getTo()];
     }
     else if (mType == MoveType::KingCastle)
     {
         addPiece(movingPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getTo()];
         Piece rook = getPieceOnSquare(move.getFrom() + 3);
         removePiece(rook, move.getFrom() + 3);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][move.getFrom() + 3];
         addPiece(rook, move.getTo() - 1);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][move.getTo() - 1];
     }
     else if (mType == MoveType::QueenCastle)
     {
         addPiece(movingPiece, move.getTo());
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(movingPiece)][move.getTo()];
         Piece rook = getPieceOnSquare(move.getFrom() - 4);
         removePiece(rook, move.getFrom() - 4);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][move.getFrom() - 4];
         addPiece(rook, move.getTo() + 1);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][move.getTo() + 1];
     }
 
     // 6. Update castling rights
@@ -356,6 +397,19 @@ void Board::makeMove(const Move &move)
         }
     }
 
+    int newCastleRights = 0;
+
+    if (whiteCastleKingSide)
+        newCastleRights |= 1;
+    if (whiteCastleQueenSide)
+        newCastleRights |= 2;
+    if (blackCastleKingSide)
+        newCastleRights |= 4;
+    if (blackCastleQueenSide)
+        newCastleRights |= 8;
+
+    hashKey ^= Zobrist::castleKeys[newCastleRights];
+
     // 7. Update en passant square
     enPassantSquare = -1;
     if (movingPiece == Piece::WhitePawn)
@@ -371,6 +425,11 @@ void Board::makeMove(const Move &move)
         {
             enPassantSquare = move.getFrom() - 8;
         }
+    }
+
+    if (enPassantSquare != -1)
+    {
+        hashKey ^= Zobrist::enPassantKeys[enPassantSquare % 8];
     }
 
     // 8. Update halfmove clock
@@ -400,6 +459,32 @@ int Board::getKingSquare(bool white) const
 
 void Board::undoMove()
 {
+    // ----------Zobrist Hashing----------
+
+    // Side to move
+    hashKey ^= Zobrist::sideKey;
+
+    // Castling rights
+    int castleRights = 0;
+
+    if (whiteCastleKingSide)
+        castleRights |= 1;
+    if (whiteCastleQueenSide)
+        castleRights |= 2;
+    if (blackCastleKingSide)
+        castleRights |= 4;
+    if (blackCastleQueenSide)
+        castleRights |= 8;
+
+    hashKey ^= Zobrist::castleKeys[castleRights];
+
+    // En passant
+    if (enPassantSquare != -1)
+    {
+        int file = enPassantSquare % 8;
+        hashKey ^= Zobrist::enPassantKeys[file];
+    }
+
     UndoInfo undo = history.back();
     history.pop_back();
     whiteToMove = !whiteToMove;
@@ -413,6 +498,12 @@ void Board::undoMove()
     halfMoveClock = undo.halfMoveClock;
     fullMoveNumber = undo.fullMoveNumber;
 
+    if (enPassantSquare != -1)
+    {
+        int file = enPassantSquare % 8;
+        hashKey ^= Zobrist::enPassantKeys[file];
+    }
+
     int to = undo.move.getTo();
     int from = undo.move.getFrom();
     MoveType mType = undo.move.getMoveType();
@@ -420,48 +511,132 @@ void Board::undoMove()
     if (mType == MoveType::Quiet)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.movedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][to];
     }
     else if (mType == MoveType::Capture)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.movedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][to];
         addPiece(undo.capturedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.capturedPiece)][to];
     }
     else if (mType == MoveType ::EnPassant)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.movedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][to];
         int capturedSquare =
             whiteToMove ? to - 8 : to + 8;
 
         addPiece(undo.capturedPiece, capturedSquare);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.capturedPiece)][capturedSquare];
     }
     else if (mType == MoveType ::Promotion)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.move.getPromotionPiece(), to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.move.getPromotionPiece())][to];
     }
     else if (mType == MoveType::PromotionCapture)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.move.getPromotionPiece(), to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.move.getPromotionPiece())][to];
         addPiece(undo.capturedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.capturedPiece)][to];
     }
     else if (mType == MoveType::KingCastle)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.movedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][to];
         Piece rook = getPieceOnSquare(to - 1);
         removePiece(rook, to - 1);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][to - 1];
         addPiece(rook, from + 3);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][from + 3];
     }
     else if (mType == MoveType::QueenCastle)
     {
         addPiece(undo.movedPiece, from);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][from];
         removePiece(undo.movedPiece, to);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(undo.movedPiece)][to];
         Piece rook = getPieceOnSquare(to + 1);
         removePiece(rook, to + 1);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][to + 1];
         addPiece(rook, from - 4);
+        hashKey ^= Zobrist::pieceKeys[static_cast<int>(rook)][from - 4];
+    }
+
+    int newCastleRights = 0;
+
+    if (whiteCastleKingSide)
+        newCastleRights |= 1;
+    if (whiteCastleQueenSide)
+        newCastleRights |= 2;
+    if (blackCastleKingSide)
+        newCastleRights |= 4;
+    if (blackCastleQueenSide)
+        newCastleRights |= 8;
+
+    hashKey ^= Zobrist::castleKeys[newCastleRights];
+}
+
+uint64_t Board::getHashKey() const
+{
+    return hashKey;
+}
+
+void Board::generateHash()
+{
+    hashKey = 0ULL;
+
+    // Piece positions
+    for (int piece = 0; piece < 12; piece++)
+    {
+        uint64_t bitboard = pieces[piece];
+
+        while (bitboard)
+        {
+            int square = __builtin_ctzll(bitboard);
+
+            hashKey ^= Zobrist::pieceKeys[piece][square];
+
+            bitboard &= (bitboard - 1);
+        }
+    }
+
+    // Side to move
+    if (whiteToMove)
+        hashKey ^= Zobrist::sideKey;
+
+    // Castling rights
+    int castleRights = 0;
+
+    if (whiteCastleKingSide)
+        castleRights |= 1;
+    if (whiteCastleQueenSide)
+        castleRights |= 2;
+    if (blackCastleKingSide)
+        castleRights |= 4;
+    if (blackCastleQueenSide)
+        castleRights |= 8;
+
+    hashKey ^= Zobrist::castleKeys[castleRights];
+
+    // En passant
+    if (enPassantSquare != -1)
+    {
+        int file = enPassantSquare % 8;
+        hashKey ^= Zobrist::enPassantKeys[file];
     }
 }
