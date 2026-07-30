@@ -102,7 +102,7 @@ ChessEngine/
 Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/OneCallEngine.git
+git clone https://github.com/dc-onecallaway/OneCallEngine.git
 cd OneCallEngine
 ```
 
