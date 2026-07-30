@@ -8,26 +8,39 @@
 
 static long long nodes = 0;
 
-Move Search::findBestMove(Board &board, int depth)
+int Search::searchRoot(Board &board, int depth, Move &bestMove)
 {
-    // TODO
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
-    MoveOrdering::orderMoves(board, moves);
+
     if (moves.empty())
     {
-        // Handle checkmate/stalemate however you prefer
-        return Move();
+        constexpr int MATE_SCORE = 100000;
+        if (board.isWhiteToMove())
+        {
+            if (board.isSquareAttacked(board.getKingSquare(true), false))
+                return -MATE_SCORE - depth; // checkmate
+            else
+                return 0; // stalemate
+        }
+        else
+        {
+            if (board.isSquareAttacked(board.getKingSquare(false), true))
+                return MATE_SCORE + depth; // checkmate
+            else
+                return 0; // stalemate
+        }
     }
 
-    // Optional but recommended: use a TT hash move at the root too,
-    // same as minimax does, for better move ordering.
-    TTEntry rootEntry;
-    if (TranspositionTable::probe(board.getHashKey(), rootEntry))
+    MoveOrdering::orderMoves(board, moves);
+
+    // TT hash move ordering
+    TTEntry entry;
+    if (TranspositionTable::probe(board.getHashKey(), entry))
     {
         for (size_t i = 0; i < moves.size(); i++)
         {
-            if (moves[i] == rootEntry.bestMove)
+            if (moves[i] == entry.bestMove)
             {
                 std::swap(moves[0], moves[i]);
                 break;
@@ -35,49 +48,105 @@ Move Search::findBestMove(Board &board, int depth)
         }
     }
 
-    Move bestMove = moves[0];
-    bool whiteToMove = board.isWhiteToMove();
-
     int alpha = INT_MIN;
     int beta = INT_MAX;
+    int originalAlpha = alpha;
+    int originalBeta = beta;
 
-    if (whiteToMove)
+    bool maximizing = board.isWhiteToMove();
+
+    int bestScore = maximizing ? INT_MIN : INT_MAX;
+    bestMove = moves[0];
+
+    for (const Move &move : moves)
     {
-        int bestScore = INT_MIN;
-        for (const Move &move : moves)
-        {
-            board.makeMove(move);
-            int score = minimax(board, depth - 1, alpha, beta);
-            board.undoMove();
+        board.makeMove(move);
 
+        int score = minimax(board, depth - 1, alpha, beta);
+
+        board.undoMove();
+
+        if (maximizing)
+        {
             if (score > bestScore)
             {
                 bestScore = score;
                 bestMove = move;
             }
-            alpha = std::max(alpha, bestScore);
-            // no beta cutoff needed at root (no sibling above to prune against)
-        }
-    }
-    else
-    {
-        int bestScore = INT_MAX;
-        for (const Move &move : moves)
-        {
-            board.makeMove(move);
-            int score = minimax(board, depth - 1, alpha, beta);
-            board.undoMove();
 
+            alpha = std::max(alpha, bestScore);
+        }
+        else
+        {
             if (score < bestScore)
             {
                 bestScore = score;
                 bestMove = move;
             }
+
             beta = std::min(beta, bestScore);
         }
     }
-    std::cout << "Nodes: " << nodes << '\n';
-    nodes = 0;
+
+    // Store root result in TT, same classification scheme as minimax
+    TTFlag flag;
+    if (maximizing)
+    {
+        if (bestScore <= originalAlpha)
+            flag = TTFlag::UpperBound;
+        else if (bestScore >= beta)
+            flag = TTFlag::LowerBound;
+        else
+            flag = TTFlag::Exact;
+    }
+    else
+    {
+        if (bestScore <= originalAlpha)
+            flag = TTFlag::UpperBound;
+        else if (bestScore >= originalBeta)
+            flag = TTFlag::LowerBound;
+        else
+            flag = TTFlag::Exact;
+    }
+
+    TranspositionTable::store(
+        board.getHashKey(),
+        depth,
+        bestScore,
+        flag, bestMove);
+
+    return bestScore;
+}
+
+Move Search::findBestMove(Board &board, int maxDepth)
+{
+    Move bestMove;
+
+    for (int depth = 1; depth <= maxDepth; depth++)
+    {
+        nodes = 0;
+
+        Move currentBest;
+
+        auto start = std::chrono::steady_clock::now();
+
+        int score = searchRoot(board, depth, currentBest);
+
+        auto end = std::chrono::steady_clock::now();
+
+        bestMove = currentBest;
+
+        std::cout << "info depth "
+                  << depth
+                  << " score cp "
+                  << score
+                  << " nodes "
+                  << nodes
+                  << " time "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+                  << std::endl;
+    }
+
     return bestMove;
 }
 
