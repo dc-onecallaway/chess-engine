@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <Move.h>
 
 enum class TTFlag
 {
@@ -16,6 +17,7 @@ struct TTEntry
     int depth = -1;
     int score = 0;
     TTFlag flag = TTFlag::Exact;
+    Move bestMove;
 };
 
 class TranspositionTable
@@ -26,7 +28,7 @@ public:
     static void store(uint64_t key,
                       int depth,
                       int score,
-                      TTFlag flag);
+                      TTFlag flag, const Move &bestMove);
 
     static bool probe(uint64_t key,
                       TTEntry &entry);

@@ -31,6 +31,7 @@ public:
     uint8_t getTo() const;
     MoveType getMoveType() const;
     Piece getPromotionPiece() const;
+    bool operator==(const Move &other) const;
 };
 
 #endif

@@ -33,3 +33,11 @@ Move::Move()
       promotionPiece(Piece::None)
 {
 }
+
+bool Move::operator==(const Move &other) const
+{
+    return from == other.from &&
+           to == other.to &&
+           moveType == other.moveType &&
+           promotionPiece == other.promotionPiece;
+}

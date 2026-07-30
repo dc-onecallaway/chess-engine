@@ -21,7 +21,7 @@ int main()
     MoveGenerator generator;
     board.initialize();
     MagicBitboards::initialize();
-    board.print();
+    // board.print();
     TranspositionTable::initialize();
 
     // TTEntry entry;
@@ -54,7 +54,7 @@ int main()
         // board.print(); // show your move
         std::cout << "Searching...\n";
         auto start = std::chrono::steady_clock::now();
-        Move best = search.findBestMove(board, 6);
+        Move best = search.findBestMove(board, 7);
         auto end = std::chrono::steady_clock::now();
         std::cout << "Search took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
         std::cout << "Search finished\n";
@@ -73,7 +73,9 @@ int main()
 // int main()
 // {
 //     AttackTables::initialize();
+//     Zobrist::initialize();
 //     MagicBitboards::initialize();
+//     TranspositionTable::initialize();
 
 //     UCI uci;
 //     uci.loop();

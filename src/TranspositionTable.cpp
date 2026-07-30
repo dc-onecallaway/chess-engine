@@ -23,7 +23,7 @@ void TranspositionTable::initialize(size_t mb)
 void TranspositionTable::store(uint64_t key,
                                int depth,
                                int score,
-                               TTFlag flag)
+                               TTFlag flag, const Move &bestMove)
 {
     uint64_t index = key & mask;
 
@@ -35,6 +35,7 @@ void TranspositionTable::store(uint64_t key,
         table[index].depth = depth;
         table[index].score = score;
         table[index].flag = flag;
+        table[index].bestMove = bestMove;
     }
 }
 

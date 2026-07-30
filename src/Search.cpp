@@ -17,30 +17,63 @@ Move Search::findBestMove(Board &board, int depth)
     if (moves.empty())
     {
         // Handle checkmate/stalemate however you prefer
+        return Move();
     }
-    Move bestMove = moves[0];
-    int maxScore = board.isWhiteToMove() ? INT_MIN : INT_MAX;
 
-    for (const Move &move : moves)
+    // Optional but recommended: use a TT hash move at the root too,
+    // same as minimax does, for better move ordering.
+    TTEntry rootEntry;
+    if (TranspositionTable::probe(board.getHashKey(), rootEntry))
     {
-        board.makeMove(move);
-        int score = minimax(board, depth - 1, INT_MIN, INT_MAX);
-        board.undoMove();
-        if (board.isWhiteToMove())
+        for (size_t i = 0; i < moves.size(); i++)
         {
-            if (score > maxScore)
+            if (moves[i] == rootEntry.bestMove)
             {
-                bestMove = move;
-                maxScore = score;
+                std::swap(moves[0], moves[i]);
+                break;
             }
         }
-        else
+    }
+
+    Move bestMove = moves[0];
+    bool whiteToMove = board.isWhiteToMove();
+
+    int alpha = INT_MIN;
+    int beta = INT_MAX;
+
+    if (whiteToMove)
+    {
+        int bestScore = INT_MIN;
+        for (const Move &move : moves)
         {
-            if (score < maxScore)
+            board.makeMove(move);
+            int score = minimax(board, depth - 1, alpha, beta);
+            board.undoMove();
+
+            if (score > bestScore)
             {
+                bestScore = score;
                 bestMove = move;
-                maxScore = score;
             }
+            alpha = std::max(alpha, bestScore);
+            // no beta cutoff needed at root (no sibling above to prune against)
+        }
+    }
+    else
+    {
+        int bestScore = INT_MAX;
+        for (const Move &move : moves)
+        {
+            board.makeMove(move);
+            int score = minimax(board, depth - 1, alpha, beta);
+            board.undoMove();
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
+            beta = std::min(beta, bestScore);
         }
     }
     std::cout << "Nodes: " << nodes << '\n';
@@ -52,9 +85,13 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
 {
     nodes++;
     TTEntry entry;
+    bool hasHashMove = false;
+    Move hashMove;
 
     if (TranspositionTable::probe(board.getHashKey(), entry))
     {
+        hasHashMove = true;
+        hashMove = entry.bestMove;
         if (entry.depth >= depth)
         {
             if (entry.flag == TTFlag::Exact)
@@ -80,6 +117,26 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
     MoveOrdering::orderMoves(board, moves);
+
+    if (hasHashMove)
+    {
+        bool matched = false;
+        for (size_t i = 0; i < moves.size(); i++)
+        {
+            if (moves[i] == hashMove)
+            {
+                std::swap(moves[0], moves[i]);
+                matched = true;
+                break;
+            }
+        }
+        static long long tries = 0, hits = 0;
+        tries++;
+        if (matched)
+            hits++;
+        if (tries % 100000 == 0)
+            std::cerr << "hash move hit rate: " << hits << "/" << tries << "\n";
+    }
 
     if (moves.empty())
     {
@@ -111,13 +168,20 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
     if (board.isWhiteToMove())
     {
         int bestScore = INT_MIN;
+        Move bestMove;
         for (const Move &move : moves)
         {
 
             board.makeMove(move);
             int score = minimax(board, depth - 1, alpha, beta);
             board.undoMove();
-            bestScore = std::max(bestScore, score);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
+
             alpha = std::max(alpha, bestScore);
             if (alpha >= beta)
             {
@@ -137,19 +201,24 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
             board.getHashKey(),
             depth,
             bestScore,
-            flag);
+            flag, bestMove);
 
         return bestScore;
     }
     else
     {
         int bestScore = INT_MAX;
+        Move bestMove;
         for (const Move &move : moves)
         {
             board.makeMove(move);
             int score = minimax(board, depth - 1, alpha, beta);
             board.undoMove();
-            bestScore = std::min(bestScore, score);
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
             beta = std::min(beta, bestScore);
             if (alpha >= beta)
             {
@@ -169,7 +238,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
             board.getHashKey(),
             depth,
             bestScore,
-            flag);
+            flag, bestMove);
 
         return bestScore;
     }
