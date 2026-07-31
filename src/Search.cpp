@@ -36,7 +36,7 @@ int Search::searchRoot(Board &board, int depth, Move &bestMove)
 
     // TT hash move ordering
     TTEntry entry;
-    if (TranspositionTable::probe(board.getHashKey(), entry))
+    if (TranspositionTable::probe(board.getHashKey(), 0, entry))
     {
         for (size_t i = 0; i < moves.size(); i++)
         {
@@ -62,7 +62,7 @@ int Search::searchRoot(Board &board, int depth, Move &bestMove)
     {
         board.makeMove(move);
 
-        int score = minimax(board, depth - 1, alpha, beta);
+        int score = minimax(board, depth - 1, alpha, beta, 1);
 
         board.undoMove();
 
@@ -112,7 +112,7 @@ int Search::searchRoot(Board &board, int depth, Move &bestMove)
     TranspositionTable::store(
         board.getHashKey(),
         depth,
-        bestScore,
+        bestScore, 0,
         flag, bestMove);
 
     return bestScore;
@@ -150,14 +150,14 @@ Move Search::findBestMove(Board &board, int maxDepth)
     return bestMove;
 }
 
-int Search::minimax(Board &board, int depth, int alpha, int beta)
+int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
 {
     nodes++;
     TTEntry entry;
     bool hasHashMove = false;
     Move hashMove;
 
-    if (TranspositionTable::probe(board.getHashKey(), entry))
+    if (TranspositionTable::probe(board.getHashKey(), ply, entry))
     {
         hasHashMove = true;
         hashMove = entry.bestMove;
@@ -181,7 +181,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
     int originalBeta = beta;
 
     if (depth == 0)
-        return quiescence(board, alpha, beta);
+        return quiescence(board, alpha, beta, ply);
     ;
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
@@ -214,7 +214,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         {
             if (board.isSquareAttacked(board.getKingSquare(true), false))
             {
-                return -MATE_SCORE - depth;
+                return -MATE_SCORE + ply;
             }
             else
             {
@@ -225,7 +225,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         {
             if (board.isSquareAttacked(board.getKingSquare(false), true))
             {
-                return MATE_SCORE + depth;
+                return MATE_SCORE - ply;
             }
             else
             {
@@ -242,7 +242,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         {
 
             board.makeMove(move);
-            int score = minimax(board, depth - 1, alpha, beta);
+            int score = minimax(board, depth - 1, alpha, beta, ply + 1);
             board.undoMove();
 
             if (score > bestScore)
@@ -261,7 +261,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
 
         if (bestScore <= originalAlpha)
             flag = TTFlag::UpperBound;
-        else if (bestScore >= beta)
+        if (bestScore >= originalBeta)
             flag = TTFlag::LowerBound;
         else
             flag = TTFlag::Exact;
@@ -269,7 +269,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         TranspositionTable::store(
             board.getHashKey(),
             depth,
-            bestScore,
+            bestScore, ply,
             flag, bestMove);
 
         return bestScore;
@@ -281,7 +281,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         for (const Move &move : moves)
         {
             board.makeMove(move);
-            int score = minimax(board, depth - 1, alpha, beta);
+            int score = minimax(board, depth - 1, alpha, beta, ply + 1);
             board.undoMove();
             if (score < bestScore)
             {
@@ -306,14 +306,14 @@ int Search::minimax(Board &board, int depth, int alpha, int beta)
         TranspositionTable::store(
             board.getHashKey(),
             depth,
-            bestScore,
+            bestScore, ply,
             flag, bestMove);
 
         return bestScore;
     }
 }
 
-int Search::quiescence(Board &board, int alpha, int beta)
+int Search::quiescence(Board &board, int alpha, int beta, int ply)
 {
     int standPat = Evaluation::evaluate(board);
 
@@ -332,7 +332,7 @@ int Search::quiescence(Board &board, int alpha, int beta)
         for (const Move &move : moves)
         {
             board.makeMove(move);
-            int score = quiescence(board, alpha, beta);
+            int score = quiescence(board, alpha, beta, ply + 1);
             board.undoMove();
             alpha = std::max(alpha, score);
             if (alpha >= beta)
@@ -355,7 +355,7 @@ int Search::quiescence(Board &board, int alpha, int beta)
         for (const Move &move : moves)
         {
             board.makeMove(move);
-            int score = quiescence(board, alpha, beta);
+            int score = quiescence(board, alpha, beta, ply + 1);
             board.undoMove();
             beta = std::min(beta, score);
             if (alpha >= beta)

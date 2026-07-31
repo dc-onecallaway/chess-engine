@@ -27,10 +27,10 @@ public:
 
     static void store(uint64_t key,
                       int depth,
-                      int score,
+                      int score, int ply,
                       TTFlag flag, const Move &bestMove);
 
-    static bool probe(uint64_t key,
+    static bool probe(uint64_t key, int ply,
                       TTEntry &entry);
 
 private:
