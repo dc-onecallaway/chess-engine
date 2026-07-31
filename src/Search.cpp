@@ -7,6 +7,7 @@
 #include <iostream>
 
 static long long nodes = 0;
+Move Search::killerMoves[64][2];
 
 int Search::searchRoot(Board &board, int depth, Move &bestMove)
 {
@@ -19,34 +20,31 @@ int Search::searchRoot(Board &board, int depth, Move &bestMove)
         if (board.isWhiteToMove())
         {
             if (board.isSquareAttacked(board.getKingSquare(true), false))
-                return -MATE_SCORE - depth; // checkmate
+                return -MATE_SCORE; // checkmate
             else
                 return 0; // stalemate
         }
         else
         {
             if (board.isSquareAttacked(board.getKingSquare(false), true))
-                return MATE_SCORE + depth; // checkmate
+                return MATE_SCORE; // checkmate
             else
                 return 0; // stalemate
         }
     }
 
-    MoveOrdering::orderMoves(board, moves);
-
-    // TT hash move ordering
+    Move hashMove;
     TTEntry entry;
+
     if (TranspositionTable::probe(board.getHashKey(), 0, entry))
-    {
-        for (size_t i = 0; i < moves.size(); i++)
-        {
-            if (moves[i] == entry.bestMove)
-            {
-                std::swap(moves[0], moves[i]);
-                break;
-            }
-        }
-    }
+        hashMove = entry.bestMove;
+
+    MoveOrdering::orderMoves(
+        board,
+        moves, 0,
+        hashMove,
+        killerMoves[0][0],
+        killerMoves[0][1]);
 
     int alpha = INT_MIN;
     int beta = INT_MAX;
@@ -120,6 +118,11 @@ int Search::searchRoot(Board &board, int depth, Move &bestMove)
 
 Move Search::findBestMove(Board &board, int maxDepth)
 {
+    for (int i = 0; i < 64; i++)
+    {
+        killerMoves[i][0] = Move();
+        killerMoves[i][1] = Move();
+    }
     Move bestMove;
 
     for (int depth = 1; depth <= maxDepth; depth++)
@@ -155,7 +158,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
     nodes++;
     TTEntry entry;
     bool hasHashMove = false;
-    Move hashMove;
+    Move hashMove = Move();
 
     if (TranspositionTable::probe(board.getHashKey(), ply, entry))
     {
@@ -185,27 +188,12 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
     ;
     MoveGenerator generator;
     std::vector<Move> moves = generator.generateLegalMoves(board);
-    MoveOrdering::orderMoves(board, moves);
-
-    if (hasHashMove)
-    {
-        bool matched = false;
-        for (size_t i = 0; i < moves.size(); i++)
-        {
-            if (moves[i] == hashMove)
-            {
-                std::swap(moves[0], moves[i]);
-                matched = true;
-                break;
-            }
-        }
-        static long long tries = 0, hits = 0;
-        tries++;
-        if (matched)
-            hits++;
-        if (tries % 100000 == 0)
-            std::cerr << "hash move hit rate: " << hits << "/" << tries << "\n";
-    }
+    MoveOrdering::orderMoves(
+        board,
+        moves, ply,
+        hashMove,
+        killerMoves[ply][0],
+        killerMoves[ply][1]);
 
     if (moves.empty())
     {
@@ -254,6 +242,23 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
             alpha = std::max(alpha, bestScore);
             if (alpha >= beta)
             {
+                // Beta cutoff
+                static long long totalCutoffs = 0, killerCutoffs = 0;
+                totalCutoffs++;
+                if (move == killerMoves[ply][0] || move == killerMoves[ply][1])
+                    killerCutoffs++;
+                if (totalCutoffs % 100000 == 0)
+                    std::cerr << "killer cutoff rate: " << killerCutoffs << "/" << totalCutoffs;
+
+                // Beta cutoff
+                if (!((move.getMoveType() == MoveType::Capture) || (move.getMoveType() == MoveType::PromotionCapture)))
+                {
+                    if (!(killerMoves[ply][0] == move))
+                    {
+                        killerMoves[ply][1] = killerMoves[ply][0];
+                        killerMoves[ply][0] = move;
+                    }
+                }
                 break;
             }
         }
@@ -261,7 +266,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
 
         if (bestScore <= originalAlpha)
             flag = TTFlag::UpperBound;
-        if (bestScore >= originalBeta)
+        else if (bestScore >= originalBeta)
             flag = TTFlag::LowerBound;
         else
             flag = TTFlag::Exact;
@@ -291,6 +296,23 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
             beta = std::min(beta, bestScore);
             if (alpha >= beta)
             {
+                // Beta cutoff
+                static long long totalCutoffs = 0, killerCutoffs = 0;
+                totalCutoffs++;
+                if (move == killerMoves[ply][0] || move == killerMoves[ply][1])
+                    killerCutoffs++;
+                if (totalCutoffs % 100000 == 0)
+                    std::cerr << "killer cutoff rate: " << killerCutoffs << "/" << totalCutoffs;
+
+                // Beta cutoff
+                if (!((move.getMoveType() == MoveType::Capture) || (move.getMoveType() == MoveType::PromotionCapture)))
+                {
+                    if (!(killerMoves[ply][0] == move))
+                    {
+                        killerMoves[ply][1] = killerMoves[ply][0];
+                        killerMoves[ply][0] = move;
+                    }
+                }
                 break;
             }
         }
@@ -327,7 +349,7 @@ int Search::quiescence(Board &board, int alpha, int beta, int ply)
         MoveGenerator generator;
 
         auto moves = generator.generateCaptureMoves(board);
-        MoveOrdering::orderMoves(board, moves);
+        MoveOrdering::orderMoves(board, moves, ply, Move(), Move(), Move());
 
         for (const Move &move : moves)
         {
@@ -350,7 +372,7 @@ int Search::quiescence(Board &board, int alpha, int beta, int ply)
         MoveGenerator generator;
 
         auto moves = generator.generateCaptureMoves(board);
-        MoveOrdering::orderMoves(board, moves);
+        MoveOrdering::orderMoves(board, moves, ply, Move(), Move(), Move());
 
         for (const Move &move : moves)
         {

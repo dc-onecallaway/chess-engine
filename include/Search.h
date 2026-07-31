@@ -11,6 +11,7 @@ public:
     static int minimax(Board &board, int depth, int alpha, int beta, int ply);
     static int quiescence(Board &board, int alpha, int beta, int ply);
     static int searchRoot(Board &board, int depth, Move &bestMove);
+    static Move killerMoves[64][2];
 };
 
 #endif
