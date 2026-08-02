@@ -9,6 +9,7 @@ namespace PieceSquareTables
     extern const int RookTable[64];
     extern const int QueenTable[64];
     extern const int KingTable[64];
+    extern const int KingEndgameTable[64];
     inline int mirrorSquare(int square)
     {
         return square ^ 56;
