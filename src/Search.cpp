@@ -123,6 +123,7 @@ Move Search::findBestMove(Board &board, int maxDepth)
         killerMoves[i][0] = Move();
         killerMoves[i][1] = Move();
     }
+    TranspositionTable::clear();
     Move bestMove;
 
     for (int depth = 1; depth <= maxDepth; depth++)
@@ -337,6 +338,7 @@ int Search::minimax(Board &board, int depth, int alpha, int beta, int ply)
 
 int Search::quiescence(Board &board, int alpha, int beta, int ply)
 {
+    nodes++;
     int standPat = Evaluation::evaluate(board);
 
     if (board.isWhiteToMove())

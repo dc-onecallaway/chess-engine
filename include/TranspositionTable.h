@@ -32,6 +32,7 @@ public:
 
     static bool probe(uint64_t key, int ply,
                       TTEntry &entry);
+    static void clear();
 
 private:
     static std::vector<TTEntry> table;

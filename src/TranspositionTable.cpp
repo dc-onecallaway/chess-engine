@@ -65,3 +65,8 @@ bool TranspositionTable::probe(uint64_t key, int ply, TTEntry &entry)
 
     return false;
 }
+
+void TranspositionTable::clear()
+{
+    std::fill(table.begin(), table.end(), TTEntry());
+}
